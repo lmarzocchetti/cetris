@@ -1,5 +1,6 @@
 # Cetris
 Tetris in C + Raylib
+
 ![screenshot000](https://github.com/user-attachments/assets/0869febe-4d5b-4a98-ba35-87a05cd635fe)
 
 ### Build and Run
