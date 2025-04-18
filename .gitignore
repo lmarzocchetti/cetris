@@ -2,5 +2,6 @@
 .clang-format
 compile_commands.json
 main
+cetris
 nob
 nob.old

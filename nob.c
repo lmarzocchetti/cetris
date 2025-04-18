@@ -31,7 +31,7 @@ int main(int argc, char** argv)
                 "-lraylib",
                 "-Wl,-rpath,/opt/homebrew/lib",
                 "-o",
-                "main",
+                "cetris",
                 "main.c");
             if (!cmd_run_sync_and_reset(&cmd))
                 return 1;
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
                 "-lraylib",
                 "-Wl,-rpath,/opt/homebrew/lib",
                 "-o",
-                "main",
+                "cetris",
                 "main.c");
             if (!cmd_run_sync_and_reset(&cmd))
                 return 1;
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
                 "-lm",
                 "-lpthread",
                 "-o",
-                "main",
+                "cetris",
                 "main.c",
                 "/opt/homebrew/lib/libraylib.a");
             if (!cmd_run_sync_and_reset(&cmd))
@@ -100,7 +100,7 @@ int main(int argc, char** argv)
                 "-lraylib",
 		"-lm",
                 "-o",
-                "main",
+                "cetris",
                 "main.c");
             if (!cmd_run_sync_and_reset(&cmd))
                 return 1;
@@ -115,7 +115,7 @@ int main(int argc, char** argv)
                 "-lraylib",
 		"-lm",
                 "-o",
-                "main",
+                "cetris",
                 "main.c");
             if (!cmd_run_sync_and_reset(&cmd))
                 return 1;
@@ -129,7 +129,7 @@ int main(int argc, char** argv)
                 "-I/usr/include",
                 "-lm",
                 "-o",
-                "main",
+                "cetris",
                 "main.c",
                 argv[2]);
             if (!cmd_run_sync_and_reset(&cmd))
