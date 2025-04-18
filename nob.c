@@ -88,7 +88,7 @@ int main(int argc, char** argv)
         return 1;
     }
 #else
-    if (argc == 2) {
+    if (argc == 2 || argc == 3) {
         if (strcmp(argv[1], "Debug") == 0) {
             cmd_append(&cmd,
                 GEN_COMP_DATABASE,
@@ -96,10 +96,9 @@ int main(int argc, char** argv)
                 "-Wall",
                 "-ggdb",
                 "-std=c23",
-                "-I./raylib-5.5/include/",
-                "-L./raylib-5.5/lib/",
+                "-I/usr/include",
                 "-lraylib",
-                "-Wl,-rpath,./raylib-5.5/lib/",
+		"-lm",
                 "-o",
                 "main",
                 "main.c");
@@ -112,10 +111,9 @@ int main(int argc, char** argv)
                 "-Wall",
                 "-std=c23",
                 "-O3",
-                "-I./raylib-5.5/include/",
-                "-L./raylib-5.5/lib/",
+                "-I/usr/include",
                 "-lraylib",
-                "-Wl,-rpath,./raylib-5.5/lib/",
+		"-lm",
                 "-o",
                 "main",
                 "main.c");
@@ -128,33 +126,20 @@ int main(int argc, char** argv)
                 "-Wall",
                 "-std=c23",
                 "-O3",
-                "-I./raylib-5.5/include/",
-                "-isysroot",
-                "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
-                "-framework",
-                "Cocoa",
-                "-framework",
-                "OpenGL",
-                "-framework",
-                "IOKit",
-                "-framework",
-                "CoreAudio",
-                "-framework",
-                "CoreVideo",
+                "-I/usr/include",
                 "-lm",
-                "-lpthread",
                 "-o",
                 "main",
                 "main.c",
-                "./raylib-5.5/lib/libraylib.a");
+                argv[2]);
             if (!cmd_run_sync_and_reset(&cmd))
                 return 1;
         } else {
-            printf("ERROR: Use [Debug|Release|Static]\n");
+            printf("ERROR: Use [Debug|Release|Static + (path-to-static-lib)]\n");
             return 1;
         }
     } else {
-        printf("ERROR: use 1 parameter [Debug|Release]\n");
+        printf("ERROR: use 1 or 2(for static) parameter [Debug|Release|Static+(path-to-static-lib)]\n");
         return 1;
     }
 #endif
