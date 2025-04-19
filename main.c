@@ -120,8 +120,6 @@ int main(void)
     Sound theme = LoadSound("resources/music/theme_a_drill.ogg");
     PlaySound(theme);
 
-    // Shader square_shader = LoadShader(nullptr, "resources/shaders/glow_square.glsl");
-    // Shader square_shader = LoadShader(nullptr, "resources/shaders/liquid_square.glsl");
     Shader square_shader = LoadShader(nullptr, "resources/shaders/liquid_square2.glsl");
 
     Game game = Game_init();
@@ -143,10 +141,6 @@ int main(void)
             Game_move_active_piece(&game, Left);
             move_timer = 0.0f;
         }
-        // if (IsKeyPressed(KEY_RIGHT))
-        //     Game_move_active_piece(&game, Right);
-        // if (IsKeyPressed(KEY_LEFT))
-        //     Game_move_active_piece(&game, Left);
         if (IsKeyPressed(KEY_Z))
             Game_rotate_active_piece(&game, Left);
         if (IsKeyPressed(KEY_X))
