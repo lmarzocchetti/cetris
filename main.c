@@ -7,12 +7,20 @@
 
 #include <raylib.h>
 
+// #define COLS 10
+// #define ROWS 20
+// #define HIDDEN_ROWS 2
+// #define TOTAL_ROWS (ROWS + HIDDEN_ROWS)
+// #define SQUARE_SIZE 40
+// #define GUI_SIZE 300
+// #define LINE_THICKNESS 2.0f
+
 #define COLS 10
 #define ROWS 20
 #define HIDDEN_ROWS 2
 #define TOTAL_ROWS (ROWS + HIDDEN_ROWS)
-#define SQUARE_SIZE 40
-#define GUI_SIZE 300
+#define SQUARE_SIZE 50
+#define GUI_SIZE 400
 #define LINE_THICKNESS 2.0f
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -100,6 +108,7 @@ int main(void)
     constexpr int level_delta = (10 - level) * 5;
 
     bool game_over = false;
+    bool music_paused = false;
 
     InitWindow(screen_width, screen_height, "Cetris");
     SetTargetFPS(60);
@@ -109,7 +118,9 @@ int main(void)
     Sound theme = LoadSound("resources/music/theme_a_drill.ogg");
     PlaySound(theme);
 
-    Shader square_shader = LoadShader(nullptr, "resources/shaders/glow_square.glsl");
+    // Shader square_shader = LoadShader(nullptr, "resources/shaders/glow_square.glsl");
+    // Shader square_shader = LoadShader(nullptr, "resources/shaders/liquid_square.glsl");
+    Shader square_shader = LoadShader(nullptr, "resources/shaders/liquid_square2.glsl");
 
     Game game = Game_init();
     float delta_time = 0.0f;
@@ -119,7 +130,7 @@ int main(void)
         gravity_wait -= 1;
 
         // Audio
-        if (!IsSoundPlaying(theme))
+        if (!IsSoundPlaying(theme) && !music_paused)
             PlaySound(theme);
         if (IsKeyPressed(KEY_RIGHT))
             Game_move_active_piece(&game, Right);
@@ -132,8 +143,10 @@ int main(void)
         if (IsKeyPressed(KEY_M)) {
             if (IsSoundPlaying(theme)) {
                 PauseSound(theme);
+                music_paused = !music_paused;
             } else {
                 ResumeSound(theme);
+                music_paused = !music_paused;
             }
         }
         if (IsKeyDown(KEY_DOWN)) {
@@ -158,34 +171,41 @@ int main(void)
 
         BeginDrawing();
         if (game_over == false) {
-            ClearBackground(RAYWHITE);
+            // ClearBackground(RAYWHITE);
+            ClearBackground((Color) { 0x1E, 0x20, 0x1E, 0xFF });
 
             Game_draw_on_window(&game, GUI_SIZE, square_shader, delta_time);
 
             // GUI DRAWING
             {
-                DrawRectangleLinesEx((Rectangle) { 0, 0, GUI_SIZE, screen_height }, 15, LIGHTGRAY);
+                DrawRectangleLinesEx((Rectangle) { 0, 0, GUI_SIZE, screen_height }, 15, (Color) { 0x3C, 0x3D, 0x37, 0xFF });
 
                 // Score Text and value
-                DrawText("Score:", 25, 50, 25, DARKGRAY);
+                DrawText("Score:", 25, 50, 25, LIGHTGRAY);
                 char score_as_str[50] = { 0 };
                 sprintf(score_as_str, "%d", game.score);
                 DrawText(score_as_str, 110, 51, 25, SKYBLUE);
 
                 // Best Score text and value
-                DrawText("Best Score:", 25, 100, 25, DARKGRAY);
+                DrawText("Best Score:", 25, 100, 25, LIGHTGRAY);
                 char best_as_str[50] = { 0 };
                 sprintf(best_as_str, "%d", game.best_score);
                 DrawText(best_as_str, 175, 101, 25, SKYBLUE);
 
                 // Deleted Lines text and value
-                DrawText("Del. Lines:", 25, 150, 25, DARKGRAY);
+                DrawText("Del. Lines:", 25, 150, 25, LIGHTGRAY);
                 char del_lines_as_str[50] = { 0 };
                 sprintf(del_lines_as_str, "%d", game.destroyed_lines);
                 DrawText(del_lines_as_str, 150, 151, 25, SKYBLUE);
 
+                // Level
+                DrawText("Level:", 25, 200, 25, LIGHTGRAY);
+                char level_as_str[50] = { 0 };
+                sprintf(level_as_str, "%d", level);
+                DrawText(level_as_str, 100, 201, 25, SKYBLUE);
+
                 // Next Piece text and new piece
-                DrawText("Next Piece", 85, 420, 25, DARKGRAY);
+                DrawText("Next Piece", GUI_SIZE / 2 - 75, 420, 25, LIGHTGRAY);
                 Color next_piece_color = ColorFromPiece(game.next_piece.kind);
 
                 for (int i = 0; i < ARRAY_LEN(game.next_piece.squares); ++i) {
@@ -205,8 +225,10 @@ int main(void)
                         .height = (float)SQUARE_SIZE
                     };
 
+                    BeginShaderMode(square_shader);
                     DrawRectangleRec(rect, next_piece_color);
                     DrawRectangleLinesEx(rect, LINE_THICKNESS, BLACK);
+                    EndShaderMode();
                 }
             }
         } else {
