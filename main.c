@@ -117,6 +117,8 @@ int main(void)
 
     InitAudioDevice();
 
+    Sound line_clear_sound = LoadSound("resources/music/line_clear.mp3");
+    Sound tetris_sound = LoadSound("resources/music/tetris.mp3");
     Sound theme = LoadSound("resources/music/theme_a_drill.ogg");
     PlaySound(theme);
 
@@ -169,6 +171,17 @@ int main(void)
             if (Game_gravity_active_piece(&game) == true) {
                 Game_release_active_piece(&game);
                 int deleted_rows = Game_delete_full_rows_if_exists(&game);
+                // SOUND
+                switch (deleted_rows) {
+                case 1:
+                case 2:
+                case 3:
+                    PlaySound(line_clear_sound);
+                    break;
+                case 4:
+                    PlaySound(tetris_sound);
+                    break;
+                }
                 Game_update_score(&game, deleted_rows, level);
                 game_over = Game_check_game_over(&game);
             }
@@ -251,6 +264,8 @@ int main(void)
     // Frees
     UnloadShader(square_shader);
     UnloadSound(theme);
+    UnloadSound(tetris_sound);
+    UnloadSound(line_clear_sound);
     CloseAudioDevice();
     CloseWindow();
 
