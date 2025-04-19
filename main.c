@@ -109,6 +109,8 @@ int main(void)
 
     bool game_over = false;
     bool music_paused = false;
+    float move_delay = 0.2f;
+    float move_timer = 0.0f;
 
     InitWindow(screen_width, screen_height, "Cetris");
     SetTargetFPS(60);
@@ -128,14 +130,23 @@ int main(void)
 
     while (!WindowShouldClose()) {
         gravity_wait -= 1;
+        move_timer += GetFrameTime();
 
         // Audio
         if (!IsSoundPlaying(theme) && !music_paused)
             PlaySound(theme);
-        if (IsKeyPressed(KEY_RIGHT))
+        if (IsKeyDown(KEY_RIGHT) && move_timer >= move_delay) {
             Game_move_active_piece(&game, Right);
-        if (IsKeyPressed(KEY_LEFT))
+            move_timer = 0.0f;
+        }
+        if (IsKeyDown(KEY_LEFT) && move_timer >= move_delay) {
             Game_move_active_piece(&game, Left);
+            move_timer = 0.0f;
+        }
+        // if (IsKeyPressed(KEY_RIGHT))
+        //     Game_move_active_piece(&game, Right);
+        // if (IsKeyPressed(KEY_LEFT))
+        //     Game_move_active_piece(&game, Left);
         if (IsKeyPressed(KEY_Z))
             Game_rotate_active_piece(&game, Left);
         if (IsKeyPressed(KEY_X))
