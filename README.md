@@ -1,6 +1,8 @@
 # Cetris
 Tetris in C + Raylib
 
+![screenshot000](https://github.com/user-attachments/assets/08fe8475-2bf2-4355-bc63-cfb857be759e)
+
 ### Build and Run
 I personally use Clang on both Linux and Macos (i'm pretty sure you can substitute clang with gcc in the nob.c and still compile)
 
