@@ -38,7 +38,7 @@ $ ./cetris
 - r -> Restart the game
 
 ### Further update
-1. Level selection
-2. Next level after some deleted blocks
-3. Destroy animation
-4. OpenGL Shaders
+- [ ] Level selection
+- [ ] Next level after some deleted blocks
+- [ ] Destroy animation
+- [X] OpenGL Shaders
