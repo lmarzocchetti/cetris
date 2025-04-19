@@ -1,5 +1,6 @@
 .cache/
 .clang-format
+.DS_STORE
 compile_commands.json
 main
 cetris
