@@ -29,6 +29,8 @@
 #define LINE_THICKNESS 2.0f
 #endif
 
+#define LEVEL_TIME(g) powf((0.8 - (g) * 0.007), g)
+
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 typedef int Square[2];
@@ -113,12 +115,14 @@ int main(void)
     constexpr int screen_width = COLS * SQUARE_SIZE + GUI_SIZE;
     constexpr int screen_height = ROWS * SQUARE_SIZE;
     constexpr int level = 7;
-    constexpr int level_delta = (10 - level) * 5;
 
     bool game_over = false;
     bool music_paused = false;
     float move_delay = 0.2f;
     float move_timer = 0.0f;
+    float level_delay = LEVEL_TIME(level);
+    float level_timer = 0.0f;
+    bool is_soft_drop = false;
 
     InitWindow(screen_width, screen_height, "Cetris");
     SetTargetFPS(60);
@@ -138,11 +142,12 @@ int main(void)
 
     Game game = Game_init();
     float delta_time = 0.0f;
-    int gravity_wait = level_delta;
 
     while (!WindowShouldClose()) {
-        gravity_wait -= 1;
         move_timer += GetFrameTime();
+        if (!is_soft_drop) {
+            level_timer += GetFrameTime();
+        }
 
         // Audio
         if (!IsSoundPlaying(theme) && !music_paused)
@@ -169,17 +174,19 @@ int main(void)
             }
         }
         if (IsKeyDown(KEY_DOWN)) {
-            if (gravity_wait > 1) {
-                gravity_wait -= 2;
-            }
+            is_soft_drop = true;
+            level_timer += level_delay / 2;
+        }
+        if (IsKeyReleased(KEY_DOWN)) {
+            is_soft_drop = false;
         }
         if (IsKeyPressed(KEY_R)) {
             Game_reset(&game);
             game_over = false;
         }
 
-        if (gravity_wait == 0) {
-            gravity_wait = level_delta;
+        if (level_timer >= level_delay) {
+            level_timer = 0.0f;
             if (Game_gravity_active_piece(&game) == true) {
                 Game_release_active_piece(&game);
                 int deleted_rows = Game_delete_full_rows_if_exists(&game);
