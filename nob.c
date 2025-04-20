@@ -13,10 +13,13 @@
 
 #define GEN_COMP_DATABASE "bear", "--" INTERCEPT_BUILD
 
+#define EMSCRIPTEN
+
 int main(int argc, char** argv)
 {
     NOB_GO_REBUILD_URSELF(argc, argv);
     Cmd cmd = { 0 };
+#ifndef EMSCRIPTEN
 #ifdef __APPLE__
     if (argc == 2) {
         if (strcmp(argv[1], "Debug") == 0) {
@@ -98,7 +101,7 @@ int main(int argc, char** argv)
                 "-std=c23",
                 "-I/usr/include",
                 "-lraylib",
-		"-lm",
+                "-lm",
                 "-o",
                 "cetris",
                 "main.c");
@@ -113,7 +116,7 @@ int main(int argc, char** argv)
                 "-O3",
                 "-I/usr/include",
                 "-lraylib",
-		"-lm",
+                "-lm",
                 "-o",
                 "cetris",
                 "main.c");
@@ -142,6 +145,41 @@ int main(int argc, char** argv)
         printf("ERROR: use 1 or 2(for static) parameter [Debug|Release|Static+(path-to-static-lib)]\n");
         return 1;
     }
+#endif
+#else
+    cmd_append(&cmd,
+        // GEN_COMP_DATABASE,
+        "emcc",
+        "-o",
+        "cetris.html",
+        "main.c",
+        "-std=c23",
+        "-Os",
+        "-Wall",
+        "raylib-5.5/build/raylib/libraylib.a",
+        "-I./raylib-5.5/build/raylib/include",
+        "-I/opt/homebrew/opt/emscripten/libexec/cache/sysroot/include",
+        "-L./raylib-5.5/build/raylib",
+        "-s",
+        "USE_GLFW=3",
+        "-s",
+        "ASYNCIFY",
+        "-s",
+        "EXPORTED_RUNTIME_METHODS=ccall, HEAPF32",
+        "--shell-file",
+        "./raylib-5.5/src/minshell.html",
+        "--preload-file",
+        "./resources",
+        "-s",
+        "STACK_SIZE=2097152",
+        "-s",
+        "USE_WEBGL2=1",
+        "-s",
+        "ALLOW_MEMORY_GROWTH=1",
+        "-sASSERTIONS",
+        "-DPLATFORM_WEB");
+    if (!cmd_run_sync_and_reset(&cmd))
+        return 1;
 #endif
     return 0;
 }

@@ -1,4 +1,6 @@
-#version 330 core
+#version 300 es
+
+precision mediump float;
 
 in vec4 fragColor;
 in vec2 fragTexCoord;

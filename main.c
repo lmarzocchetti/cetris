@@ -7,14 +7,19 @@
 
 #include <raylib.h>
 
-// #define COLS 10
-// #define ROWS 20
-// #define HIDDEN_ROWS 2
-// #define TOTAL_ROWS (ROWS + HIDDEN_ROWS)
-// #define SQUARE_SIZE 40
-// #define GUI_SIZE 300
-// #define LINE_THICKNESS 2.0f
+#if defined(PLATFORM_WEB)
+#include <emscripten/emscripten.h>
+#endif
 
+#ifdef PLATFORM_WEB
+#define COLS 10
+#define ROWS 20
+#define HIDDEN_ROWS 2
+#define TOTAL_ROWS (ROWS + HIDDEN_ROWS)
+#define SQUARE_SIZE 40
+#define GUI_SIZE 300
+#define LINE_THICKNESS 2.0f
+#else
 #define COLS 10
 #define ROWS 20
 #define HIDDEN_ROWS 2
@@ -22,6 +27,7 @@
 #define SQUARE_SIZE 50
 #define GUI_SIZE 400
 #define LINE_THICKNESS 2.0f
+#endif
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
 
@@ -98,6 +104,8 @@ int Game_delete_full_rows_if_exists(Game* game);
 bool Game_check_game_over(Game* game);
 void Game_draw_on_window(const Game* game, int starting_x, Shader shader, float delta_time);
 
+void update_draw_frame(void);
+
 int main(void)
 {
     srand(time(NULL)); // SEED
@@ -122,7 +130,11 @@ int main(void)
     Sound theme = LoadSound("resources/music/theme_a_drill.ogg");
     PlaySound(theme);
 
-    Shader square_shader = LoadShader(nullptr, "resources/shaders/liquid_square2.glsl");
+#ifdef PLATFORM_WEB
+    Shader square_shader = LoadShader("resources/shaders/liquid_square_vertex.glsl", "resources/shaders/liquid_square_web.glsl");
+#else
+    Shader square_shader = LoadShader(nullptr, "resources/shaders/liquid_square.glsl");
+#endif
 
     Game game = Game_init();
     float delta_time = 0.0f;
@@ -270,6 +282,10 @@ int main(void)
     CloseWindow();
 
     return 0;
+}
+
+void update_draw_frame(void)
+{
 }
 
 //              //
