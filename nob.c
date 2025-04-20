@@ -13,7 +13,7 @@
 
 #define GEN_COMP_DATABASE "bear", "--" INTERCEPT_BUILD
 
-#define EMSCRIPTEN
+// #define EMSCRIPTEN
 
 int main(int argc, char** argv)
 {

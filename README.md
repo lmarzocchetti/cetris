@@ -1,35 +1,58 @@
 # Cetris
-Tetris in C + Raylib
+
+Tetris in C + Raylib (and WEB using emscripten and wasm)
 
 ![screenshot000](https://github.com/user-attachments/assets/08fe8475-2bf2-4355-bc63-cfb857be759e)
 
 ### Build and Run
+
 I personally use Clang on both Linux and Macos (i'm pretty sure you can substitute clang with gcc in the nob.c and still compile)
 
 Clone the repo and enter:
+
 ```
 $ git clone https://github.com/lmarzocchetti/cetris
 $ cd cetris
 ```
+
 Build the nob:
+
 ```
 $ clang -o nob nob.c
 ```
+
 Compile the executable dynamic
+
 ```
 $ <install raylib with homebrew or apt/dnf/pacman>
 $ ./nob Debug|Release
 ```
+
 or if you want to link statically
+
 ```
 $ ./nob Static <path-to-libraylib.a>
 ```
+
 Play:
+
 ```
 $ ./cetris
 ```
 
+### Emscripten build
+
+1. Download and compile raylib targeting the web following the raylib guide (https://github.com/raysan5/raylib/wiki/Working-for-Web-(HTML5)) in a folder called raylib-5.5
+2. Uncomment the line "// #define EMSCRIPTEN" in nob.c
+3. In cetris folder: `$ ./nob`
+4. `$ python -m http.server 8080`
+5. Go in your browser to: "http://localhost:8080/cetris.html"
+6. Play!
+
+To play the music you need to click on the canvas!
+
 ### Keybindings
+
 - z -> Rotate the piece Clockwise
 - x -> Rotate the piece Anticlockwise
 - Left and Right key -> Move the piece
@@ -38,7 +61,9 @@ $ ./cetris
 - r -> Restart the game
 
 ### Further update
+
 - [ ] Level selection
 - [ ] Next level after some deleted blocks
 - [ ] Destroy animation
-- [X] OpenGL Shaders
+- [x] OpenGL Shaders
+- [x] Web support (emscripten)
