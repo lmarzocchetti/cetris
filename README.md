@@ -67,3 +67,7 @@ To play the music you need to click on the canvas!
 - [ ] Destroy animation
 - [x] OpenGL Shaders
 - [x] Web support (emscripten)
+
+### Windows support
+
+If you want to add windows support you can do push request. Need to add some preprocessor on nob.c and os independent path in main.c
