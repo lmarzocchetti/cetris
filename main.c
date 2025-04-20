@@ -30,6 +30,7 @@
 #endif
 
 #define LEVEL_TIME(g) powf((0.8 - (g) * 0.007), g)
+#define A_TYPE_P(level, destr_lines) ((level * 10 + 10) <= destr_lines)
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
 
@@ -114,13 +115,14 @@ int main(void)
 
     constexpr int screen_width = COLS * SQUARE_SIZE + GUI_SIZE;
     constexpr int screen_height = ROWS * SQUARE_SIZE;
-    constexpr int level = 7;
+    int start_level = 0;
+    int current_level = start_level;
 
     bool game_over = false;
     bool music_paused = false;
     float move_delay = 0.2f;
     float move_timer = 0.0f;
-    float level_delay = LEVEL_TIME(level);
+    float level_delay = LEVEL_TIME(start_level);
     float level_timer = 0.0f;
     bool is_soft_drop = false;
 
@@ -201,14 +203,18 @@ int main(void)
                     PlaySound(tetris_sound);
                     break;
                 }
-                Game_update_score(&game, deleted_rows, level);
+                Game_update_score(&game, deleted_rows, current_level);
+                // Change level if need
+                if ((current_level == start_level && A_TYPE_P(start_level, game.destroyed_lines)) || (current_level > start_level && (game.destroyed_lines >= ((start_level * 10 + 10) + (current_level - start_level) * 10)))) {
+                    current_level += 1;
+                    level_delay = LEVEL_TIME(current_level);
+                }
                 game_over = Game_check_game_over(&game);
             }
         }
 
         BeginDrawing();
         if (game_over == false) {
-            // ClearBackground(RAYWHITE);
             ClearBackground((Color) { 0x1E, 0x20, 0x1E, 0xFF });
 
             Game_draw_on_window(&game, GUI_SIZE, square_shader, delta_time);
@@ -238,7 +244,7 @@ int main(void)
                 // Level
                 DrawText("Level:", 25, 200, 25, LIGHTGRAY);
                 char level_as_str[50] = { 0 };
-                sprintf(level_as_str, "%d", level);
+                sprintf(level_as_str, "%d", current_level);
                 DrawText(level_as_str, 100, 201, 25, SKYBLUE);
 
                 // Next Piece text and new piece
