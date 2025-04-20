@@ -63,7 +63,7 @@ To play the music you need to click on the canvas!
 ### Further update
 
 - [ ] Level selection
-- [ ] Next level after some deleted blocks
+- [x] Next level after some deleted blocks
 - [ ] Destroy animation
 - [x] OpenGL Shaders
 - [x] Web support (emscripten)
