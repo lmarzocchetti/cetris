@@ -1,5 +1,6 @@
 .cache/
 .clang-format
+raylib-5.5/
 .DS_STORE
 compile_commands.json
 main
