@@ -29,9 +29,21 @@
 #define LINE_THICKNESS 2.0f
 #endif
 
+/*
+    Macro: define a formula to calculate the time that a piece need to go down
+    by 1 square based on level.
+*/
 #define LEVEL_TIME(g) powf((0.8 - (g) * 0.007), g)
+
+/*
+    Macro: Predicate that return true or false based by a formula that tell
+    us when can we pass to the next level (first level).
+*/
 #define A_TYPE_P(level, destr_lines) ((level * 10 + 10) <= destr_lines)
 
+/*
+    Macro: needs to abstract some code that needs to be copy-pasted every time
+*/
 #define SELECT_LEVEL(l)               \
     do {                              \
         *start_level = l;             \
@@ -41,8 +53,14 @@
 
 #define ARRAY_LEN_INT(arr) ((int)(sizeof(arr) / sizeof((arr)[0])))
 
+/*
+    Square is an array of 2 ints, indicating the y and x (in the square coordinate)
+*/
 typedef int Square[2];
 
+/*
+    All kinds of pieces in Tetris
+*/
 typedef enum {
     T,
     J,
@@ -59,6 +77,9 @@ PieceKind PieceKind_get_random(void)
     return (PieceKind)(rand() % Empty);
 }
 
+/*
+    Macro: Return a color based of piece
+*/
 #define ColorFromPiece(piece) (                    \
     (piece) == T ? PURPLE : (piece) == J ? BLUE    \
         : (piece) == Z                   ? RED     \
@@ -68,6 +89,9 @@ PieceKind PieceKind_get_random(void)
         : (piece) == I                   ? SKYBLUE \
                                          : (assert(false), BLACK))
 
+/*
+    A piece is composed by 4 square (tetromino) and a kind
+*/
 typedef struct {
     PieceKind kind;
     Square squares[4];
@@ -78,11 +102,17 @@ typedef enum {
     Right
 } Direction;
 
+/*
+    A slot representing an empty or not square, saving the kind of the piece if there is any
+*/
 typedef struct {
     bool active;
     PieceKind type;
 } Slot;
 
+/*
+    Board is simply a matrix of Slots
+*/
 typedef Slot Board[TOTAL_ROWS][COLS];
 
 typedef struct {
