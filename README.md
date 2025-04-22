@@ -83,10 +83,11 @@ and substitute to the <style> generated automatically by emscripten.
 - Down key -> Speed up the piece
 - m -> Mute/Unmute the music
 - r -> Restart the game
+- l -> Select another level
 
 ### Further update
 
-- [ ] Level selection
+- [x] Level selection
 - [x] Next level after some deleted blocks
 - [ ] Destroy animation
 - [x] OpenGL Shaders

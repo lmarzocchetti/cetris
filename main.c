@@ -32,6 +32,13 @@
 #define LEVEL_TIME(g) powf((0.8 - (g) * 0.007), g)
 #define A_TYPE_P(level, destr_lines) ((level * 10 + 10) <= destr_lines)
 
+#define SELECT_LEVEL(l)               \
+    do {                              \
+        *start_level = l;             \
+        *level_delay = LEVEL_TIME(l); \
+        return true;                  \
+    } while (0)
+
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 typedef int Square[2];
@@ -132,6 +139,7 @@ void play_screen_input(
     bool* music_paused,
     bool* is_soft_drop,
     bool* game_over,
+    bool* level_selection_screen,
     int start_level);
 
 void play_screen_logic(
@@ -142,7 +150,9 @@ void play_screen_logic(
     bool* is_soft_drop,
     bool* music_paused);
 
-void render_level_selection_screen(void);
+bool level_selection_screen_input(int* start_level, float* level_delay);
+
+void level_selection_screen_render(int screen_width, int screen_height);
 
 int main(void)
 {
@@ -150,8 +160,15 @@ int main(void)
 
     constexpr int screen_width = COLS * SQUARE_SIZE + GUI_SIZE;
     constexpr int screen_height = ROWS * SQUARE_SIZE;
+
+    // Global Render various screen
+    bool level_selection_screen = true;
+
+    // TODO: Refactor variable in a struct level selection
     int start_level = 0;
 
+    // TODO: Refactor these variables in a struct
+    // START Play Screen variables
     bool game_over = false;
     bool music_paused = false;
     float move_delay = 0.2f;
@@ -159,6 +176,7 @@ int main(void)
     float level_delay = LEVEL_TIME(start_level);
     float level_timer = 0.0f;
     bool is_soft_drop = false;
+    // END Play Screen variables
 
     InitWindow(screen_width, screen_height, "Cetris");
     SetTargetFPS(60);
@@ -180,14 +198,25 @@ int main(void)
     float delta_time = 0.0f;
 
     while (!WindowShouldClose()) {
-        // INPUT
-        play_screen_input(&game, &theme, &move_timer, &move_delay, &level_timer, &level_delay, &music_paused, &is_soft_drop, &game_over, start_level);
+        if (level_selection_screen) {
+            // INPUT
+            if (level_selection_screen_input(&start_level, &level_delay)) {
+                level_selection_screen = false;
+                game.current_level = start_level;
+            }
 
-        // RENDER
-        play_screen_render(&game, &line_clear_sound, &tetris_sound, &next_level_sound, &square_shader, &game_over, &delta_time, &level_timer, &level_delay, screen_width, screen_height, start_level);
+            // RENDER
+            level_selection_screen_render(screen_width, screen_height);
+        } else {
+            // INPUT
+            play_screen_input(&game, &theme, &move_timer, &move_delay, &level_timer, &level_delay, &music_paused, &is_soft_drop, &game_over, &level_selection_screen, start_level);
 
-        // LOGIC
-        play_screen_logic(&theme, &delta_time, &level_timer, &move_timer, &is_soft_drop, &music_paused);
+            // RENDER
+            play_screen_render(&game, &line_clear_sound, &tetris_sound, &next_level_sound, &square_shader, &game_over, &delta_time, &level_timer, &level_delay, screen_width, screen_height, start_level);
+
+            // LOGIC
+            play_screen_logic(&theme, &delta_time, &level_timer, &move_timer, &is_soft_drop, &music_paused);
+        }
     }
 
     // Frees
@@ -208,8 +237,41 @@ int main(void)
 //              //
 //              //
 
-void render_level_selection_screen(void)
+bool level_selection_screen_input(int* start_level, float* level_delay)
 {
+    if (IsKeyPressed(KEY_ZERO)) {
+        SELECT_LEVEL(0);
+    } else if (IsKeyPressed(KEY_ONE)) {
+        SELECT_LEVEL(1);
+    } else if (IsKeyPressed(KEY_TWO)) {
+        SELECT_LEVEL(2);
+    } else if (IsKeyPressed(KEY_THREE)) {
+        SELECT_LEVEL(3);
+    } else if (IsKeyPressed(KEY_FOUR)) {
+        SELECT_LEVEL(4);
+    } else if (IsKeyPressed(KEY_FIVE)) {
+        SELECT_LEVEL(5);
+    } else if (IsKeyPressed(KEY_SIX)) {
+        SELECT_LEVEL(6);
+    } else if (IsKeyPressed(KEY_SEVEN)) {
+        SELECT_LEVEL(7);
+    } else if (IsKeyPressed(KEY_EIGHT)) {
+        SELECT_LEVEL(8);
+    } else if (IsKeyPressed(KEY_NINE)) {
+        SELECT_LEVEL(9);
+    }
+
+    return false;
+}
+
+void level_selection_screen_render(int screen_width, int screen_height)
+{
+    BeginDrawing();
+    ClearBackground((Color) { 0x1E, 0x20, 0x1E, 0xFF });
+
+    DrawText("Select a level 0-9", ((float)screen_width / 2.0) - 110, ((float)screen_height / 2.0) - 25, 25, RAYWHITE);
+
+    EndDrawing();
 }
 
 void play_screen_input(
@@ -222,6 +284,7 @@ void play_screen_input(
     bool* music_paused,
     bool* is_soft_drop,
     bool* game_over,
+    bool* level_selection_screen,
     int start_level)
 {
     if (IsKeyDown(KEY_RIGHT) && *move_timer >= *move_delay) {
@@ -232,10 +295,16 @@ void play_screen_input(
         Game_move_active_piece(game, Left);
         *move_timer = 0.0f;
     }
-    if (IsKeyPressed(KEY_Z))
+    if (IsKeyPressed(KEY_Z)) {
         Game_rotate_active_piece(game, Left);
-    if (IsKeyPressed(KEY_X))
+    }
+    if (IsKeyPressed(KEY_X)) {
         Game_rotate_active_piece(game, Right);
+    }
+    if (IsKeyPressed(KEY_L)) {
+        *level_selection_screen = true;
+        Game_reset(game, start_level);
+    }
     if (IsKeyPressed(KEY_M)) {
         if (IsSoundPlaying(*theme)) {
             PauseSound(*theme);
