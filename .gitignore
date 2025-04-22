@@ -1,6 +1,7 @@
 .cache/
 .clang-format
 raylib-5.5/
+cetris.dSYM/
 .DS_STORE
 compile_commands.json
 main

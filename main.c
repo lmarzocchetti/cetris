@@ -39,7 +39,7 @@
         return true;                  \
     } while (0)
 
-#define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
+#define ARRAY_LEN_INT(arr) ((int)(sizeof(arr) / sizeof((arr)[0])))
 
 typedef int Square[2];
 
@@ -117,17 +117,11 @@ void Game_draw_on_window(const Game* game, int starting_x, Shader shader, float 
 
 void play_screen_render(
     Game* game,
-    Sound* line_clear_sound,
-    Sound* tetris_sound,
-    Sound* next_level_sound,
     Shader* square_shader,
     bool* game_over,
     float* delta_time,
-    float* level_timer,
-    float* level_delay,
     int screen_width,
-    int screen_height,
-    int start_level);
+    int screen_height);
 
 void play_screen_input(
     Game* game,
@@ -143,12 +137,19 @@ void play_screen_input(
     int start_level);
 
 void play_screen_logic(
+    Game* game,
     Sound* theme,
+    Sound* line_clear_sound,
+    Sound* tetris_sound,
+    Sound* next_level_sound,
+    int* start_level,
     float* delta_time,
     float* level_timer,
+    float* level_delay,
     float* move_timer,
     bool* is_soft_drop,
-    bool* music_paused);
+    bool* music_paused,
+    bool* game_over);
 
 bool level_selection_screen_input(int* start_level, float* level_delay);
 
@@ -212,10 +213,12 @@ int main(void)
             play_screen_input(&game, &theme, &move_timer, &move_delay, &level_timer, &level_delay, &music_paused, &is_soft_drop, &game_over, &level_selection_screen, start_level);
 
             // RENDER
-            play_screen_render(&game, &line_clear_sound, &tetris_sound, &next_level_sound, &square_shader, &game_over, &delta_time, &level_timer, &level_delay, screen_width, screen_height, start_level);
+            play_screen_render(&game, &square_shader, &game_over, &delta_time, screen_width, screen_height);
 
             // LOGIC
-            play_screen_logic(&theme, &delta_time, &level_timer, &move_timer, &is_soft_drop, &music_paused);
+            if (!game_over) {
+                play_screen_logic(&game, &theme, &line_clear_sound, &tetris_sound, &next_level_sound, &start_level, &delta_time, &level_timer, &level_delay, &move_timer, &is_soft_drop, &music_paused, &game_over);
+            }
         }
     }
 
@@ -329,45 +332,12 @@ void play_screen_input(
 
 void play_screen_render(
     Game* game,
-    Sound* line_clear_sound,
-    Sound* tetris_sound,
-    Sound* next_level_sound,
     Shader* square_shader,
     bool* game_over,
     float* delta_time,
-    float* level_timer,
-    float* level_delay,
     int screen_width,
-    int screen_height,
-    int start_level)
+    int screen_height)
 {
-    if (*level_timer >= *level_delay) {
-        *level_timer = 0.0f;
-        if (Game_gravity_active_piece(game) == true) {
-            Game_release_active_piece(game);
-            int deleted_rows = Game_delete_full_rows_if_exists(game);
-            // SOUND
-            switch (deleted_rows) {
-            case 1:
-            case 2:
-            case 3:
-                PlaySound(*line_clear_sound);
-                break;
-            case 4:
-                PlaySound(*tetris_sound);
-                break;
-            }
-            Game_update_score(game, deleted_rows);
-            // Change level if need
-            if ((game->current_level == start_level && A_TYPE_P(start_level, game->destroyed_lines)) || (game->current_level > start_level && (game->destroyed_lines >= ((start_level * 10 + 10) + (game->current_level - start_level) * 10)))) {
-                game->current_level += 1;
-                *level_delay = LEVEL_TIME(game->current_level);
-                PlaySound(*next_level_sound);
-            }
-            *game_over = Game_check_game_over(game);
-        }
-    }
-
     if (*game_over == false) {
         BeginDrawing();
         ClearBackground((Color) { 0x1E, 0x20, 0x1E, 0xFF });
@@ -406,7 +376,7 @@ void play_screen_render(
             DrawText("Next Piece", GUI_SIZE / 2 - 75, 420, 25, LIGHTGRAY);
             Color next_piece_color = ColorFromPiece(game->next_piece.kind);
 
-            for (int i = 0; i < ARRAY_LEN(game->next_piece.squares); ++i) {
+            for (int i = 0; i < ARRAY_LEN_INT(game->next_piece.squares); ++i) {
                 float new_x = 0.0f;
                 if (game->next_piece.kind == I) {
                     new_x = (float)(game->next_piece.squares[i][1] * SQUARE_SIZE - 85);
@@ -432,6 +402,7 @@ void play_screen_render(
         EndDrawing();
     } else {
         BeginDrawing();
+        Game_draw_on_window(game, GUI_SIZE, *square_shader, *delta_time);
         DrawText("Si pers fra :(", screen_width / 4, screen_height / 3, 30, DARKBLUE);
         DrawText("Schiaccj lu tast R per continua'", screen_width / 4, screen_height / 3 + 40, 25, LIME);
         EndDrawing();
@@ -440,13 +411,47 @@ void play_screen_render(
 }
 
 void play_screen_logic(
+    Game* game,
     Sound* theme,
+    Sound* line_clear_sound,
+    Sound* tetris_sound,
+    Sound* next_level_sound,
+    int* start_level,
     float* delta_time,
     float* level_timer,
+    float* level_delay,
     float* move_timer,
     bool* is_soft_drop,
-    bool* music_paused)
+    bool* music_paused,
+    bool* game_over)
 {
+    if (*level_timer >= *level_delay) {
+        *level_timer = 0.0f;
+        if (Game_gravity_active_piece(game) == true) {
+            Game_release_active_piece(game);
+            int deleted_rows = Game_delete_full_rows_if_exists(game);
+            // SOUND
+            switch (deleted_rows) {
+            case 1:
+            case 2:
+            case 3:
+                PlaySound(*line_clear_sound);
+                break;
+            case 4:
+                PlaySound(*tetris_sound);
+                break;
+            }
+            Game_update_score(game, deleted_rows);
+            // Change level if need
+            if ((game->current_level == *start_level && A_TYPE_P(*start_level, game->destroyed_lines)) || (game->current_level > *start_level && (game->destroyed_lines >= ((*start_level * 10 + 10) + (game->current_level - *start_level) * 10)))) {
+                game->current_level += 1;
+                *level_delay = LEVEL_TIME(game->current_level);
+                PlaySound(*next_level_sound);
+            }
+            *game_over = Game_check_game_over(game);
+        }
+    }
+
     // Audio
     if (!IsSoundPlaying(*theme) && !(*music_paused)) {
         PlaySound(*theme);
@@ -461,7 +466,7 @@ void play_screen_logic(
 int Piece_left_square(Piece* piece)
 {
     int min_col = 100;
-    for (int i = 0; i < ARRAY_LEN(piece->squares); ++i) {
+    for (int i = 0; i < ARRAY_LEN_INT(piece->squares); ++i) {
         if (piece->squares[i][1] < min_col) {
             min_col = piece->squares[i][1];
         }
@@ -472,7 +477,7 @@ int Piece_left_square(Piece* piece)
 int Piece_right_square(Piece* piece)
 {
     int max_col = 0;
-    for (int i = 0; i < ARRAY_LEN(piece->squares); ++i) {
+    for (int i = 0; i < ARRAY_LEN_INT(piece->squares); ++i) {
         if (piece->squares[i][1] > max_col) {
             max_col = piece->squares[i][1];
         }
@@ -487,7 +492,7 @@ void Piece_rotate(Piece* piece, float direction, Game* game)
 
     Square rotated_points[4] = { 0 };
 
-    for (int i = 0; i < ARRAY_LEN(piece->squares); ++i) {
+    for (int i = 0; i < ARRAY_LEN_INT(piece->squares); ++i) {
         const float x0 = (float)piece->squares[i][0] - (float)(*origin)[0];
         const float y0 = (float)piece->squares[i][1] - (float)(*origin)[1];
 
@@ -516,10 +521,10 @@ Piece spawn_piece(void)
     switch (piece_kind_to_spawn) {
     case T:
         memcpy(piece_to_spawn.squares, (Square[4]) {
+                                           { 3, 5 },
                                            { 2, 5 },
-                                           { 1, 5 },
-                                           { 1, 4 },
-                                           { 1, 6 },
+                                           { 2, 4 },
+                                           { 2, 6 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
@@ -534,46 +539,46 @@ Piece spawn_piece(void)
         break;
     case J:
         memcpy(piece_to_spawn.squares, (Square[4]) {
-                                           { 2, 4 },
-                                           { 2, 5 },
+                                           { 3, 4 },
+                                           { 3, 5 },
+                                           { 3, 6 },
                                            { 2, 6 },
-                                           { 1, 6 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
     case Z:
         memcpy(piece_to_spawn.squares, (Square[4]) {
-                                           { 1, 6 },
-                                           { 1, 5 },
-                                           { 2, 4 },
+                                           { 2, 6 },
                                            { 2, 5 },
+                                           { 3, 4 },
+                                           { 3, 5 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
     case O:
         memcpy(piece_to_spawn.squares, (Square[4]) {
+                                           { 3, 4 },
+                                           { 3, 5 },
                                            { 2, 4 },
                                            { 2, 5 },
-                                           { 1, 4 },
-                                           { 1, 5 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
     case S:
         memcpy(piece_to_spawn.squares, (Square[4]) {
-                                           { 2, 6 },
+                                           { 3, 6 },
+                                           { 3, 5 },
                                            { 2, 5 },
-                                           { 1, 5 },
-                                           { 1, 4 },
+                                           { 2, 4 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
     case L:
         memcpy(piece_to_spawn.squares, (Square[4]) {
+                                           { 3, 4 },
+                                           { 3, 5 },
+                                           { 3, 6 },
                                            { 2, 4 },
-                                           { 2, 5 },
-                                           { 2, 6 },
-                                           { 1, 4 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
@@ -589,8 +594,8 @@ Piece spawn_piece(void)
 Game Game_init(int level)
 {
     Board board = { 0 };
-    for (int row = 0; row < ARRAY_LEN(board); ++row) {
-        for (int col = 0; col < ARRAY_LEN(board[col]); ++col) {
+    for (int row = 0; row < ARRAY_LEN_INT(board); ++row) {
+        for (int col = 0; col < ARRAY_LEN_INT(board[col]); ++col) {
             board[row][col].active = false;
             board[row][col].type = Empty;
         }
@@ -637,7 +642,7 @@ bool Game_active_piece_can_go_right(Game* game)
         return false;
     }
 
-    for (int i = 0; i < ARRAY_LEN(game->active_piece.squares); ++i) {
+    for (int i = 0; i < ARRAY_LEN_INT(game->active_piece.squares); ++i) {
         Square next = { game->active_piece.squares[i][0], game->active_piece.squares[i][1] + 1 };
         if (Game_touch_other_square(game, next)) {
             return false;
@@ -653,7 +658,7 @@ bool Game_active_piece_can_go_left(Game* game)
     if (active_left == 0)
         return false;
 
-    for (int i = 0; i < ARRAY_LEN(game->active_piece.squares); ++i) {
+    for (int i = 0; i < ARRAY_LEN_INT(game->active_piece.squares); ++i) {
         Square next = { game->active_piece.squares[i][0], game->active_piece.squares[i][1] - 1 };
         if (Game_touch_other_square(game, next)) {
             return false;
@@ -668,7 +673,7 @@ bool Game_active_piece_can_go_left(Game* game)
 */
 bool Game_gravity_active_piece(Game* game)
 {
-    for (int i = 0; i < ARRAY_LEN(game->active_piece.squares); ++i) {
+    for (int i = 0; i < ARRAY_LEN_INT(game->active_piece.squares); ++i) {
         Square next = { game->active_piece.squares[i][0] + 1, game->active_piece.squares[i][1] };
         if (next[0] == TOTAL_ROWS) {
             return true;
@@ -679,7 +684,7 @@ bool Game_gravity_active_piece(Game* game)
         }
     }
 
-    for (int i = 0; i < ARRAY_LEN(game->active_piece.squares); ++i) {
+    for (int i = 0; i < ARRAY_LEN_INT(game->active_piece.squares); ++i) {
         game->active_piece.squares[i][0] += 1;
     }
 
@@ -688,7 +693,7 @@ bool Game_gravity_active_piece(Game* game)
 
 void Game_release_active_piece(Game* game)
 {
-    for (int i = 0; i < ARRAY_LEN(game->active_piece.squares); ++i) {
+    for (int i = 0; i < ARRAY_LEN_INT(game->active_piece.squares); ++i) {
         Square* curr_square = &game->active_piece.squares[i];
         memcpy(
             (void*)&game->board[(*curr_square)[0]][(*curr_square)[1]],
@@ -705,14 +710,14 @@ void Game_move_active_piece(Game* game, Direction direction)
     switch (direction) {
     case Left:
         if (Game_active_piece_can_go_left(game) == true) {
-            for (int i = 0; i < ARRAY_LEN(game->active_piece.squares); ++i) {
+            for (int i = 0; i < ARRAY_LEN_INT(game->active_piece.squares); ++i) {
                 game->active_piece.squares[i][1] -= 1;
             }
         }
         break;
     case Right:
         if (Game_active_piece_can_go_right(game) == true) {
-            for (int i = 0; i < ARRAY_LEN(game->active_piece.squares); ++i) {
+            for (int i = 0; i < ARRAY_LEN_INT(game->active_piece.squares); ++i) {
                 game->active_piece.squares[i][1] += 1;
             }
         }
@@ -757,11 +762,11 @@ int Game_delete_full_rows_if_exists(Game* game)
 {
     int deleted_rows = 0;
 
-    for (int row = 0; row < ARRAY_LEN(game->board); ++row) {
+    for (int row = 0; row < ARRAY_LEN_INT(game->board); ++row) {
         bool full_row = true;
 
         // Check if the row is full
-        for (int col = 0; col < ARRAY_LEN(game->board[row]); ++col) {
+        for (int col = 0; col < ARRAY_LEN_INT(game->board[row]); ++col) {
             if (game->board[row][col].active == false) {
                 full_row = false;
                 break;
@@ -775,7 +780,7 @@ int Game_delete_full_rows_if_exists(Game* game)
             int row_start = row;
 
             while (row_start > 0) {
-                for (int col = 0; col < ARRAY_LEN(game->board[row]); ++col) {
+                for (int col = 0; col < ARRAY_LEN_INT(game->board[row]); ++col) {
                     memcpy(&game->board[row_start][col], &game->board[row_start - 1][col], sizeof(Slot));
                 }
                 row_start -= 1;
@@ -788,8 +793,8 @@ int Game_delete_full_rows_if_exists(Game* game)
 
 bool Game_check_game_over(Game* game)
 {
-    for (int i = 0; i < ARRAY_LEN(game->board[1]); ++i) {
-        if (game->board[1][i].active == true) {
+    for (int i = 0; i < ARRAY_LEN_INT(game->active_piece.squares); ++i) {
+        if (game->board[game->active_piece.squares[i][0]][game->active_piece.squares[i][1]].active == true) {
             return true;
         }
     }
@@ -802,12 +807,12 @@ void Game_draw_on_window(const Game* game, int starting_x, Shader shader, float 
     int shader_loc = GetShaderLocation(shader, "time");
     SetShaderValue(shader, shader_loc, &delta_time, SHADER_UNIFORM_FLOAT);
 
-    for (int row = 0; row < ARRAY_LEN(game->board); ++row) {
+    for (int row = 0; row < ARRAY_LEN_INT(game->board); ++row) {
         if (row < HIDDEN_ROWS) {
             continue;
         }
 
-        for (int col = 0; col < ARRAY_LEN(game->board[row]); ++col) {
+        for (int col = 0; col < ARRAY_LEN_INT(game->board[row]); ++col) {
             const Slot* curr_square = &game->board[row][col];
             if (curr_square->active == true) {
                 Rectangle to_draw = {
@@ -829,7 +834,7 @@ void Game_draw_on_window(const Game* game, int starting_x, Shader shader, float 
         }
     }
 
-    for (int i = 0; i < ARRAY_LEN(game->active_piece.squares); ++i) {
+    for (int i = 0; i < ARRAY_LEN_INT(game->active_piece.squares); ++i) {
         Rectangle rect = {
             .x = (float)(game->active_piece.squares[i][1] * SQUARE_SIZE + starting_x),
             .y = (float)(game->active_piece.squares[i][0] * SQUARE_SIZE - HIDDEN_ROWS * SQUARE_SIZE),
