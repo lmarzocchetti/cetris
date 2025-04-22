@@ -125,33 +125,67 @@ typedef struct {
     int current_level;
 } Game;
 
+/// PIECE
+
+/*
+    Return the most left square in a Piece
+*/
 int Piece_left_square(Piece* piece);
+
+/*
+    Return the most right square in a Piece
+*/
 int Piece_right_square(Piece* piece);
+
+/*
+    Rotate a piece clockwise or anti-clockwise. (direction 1 or -1)
+*/
 void Piece_rotate(Piece* piece, float direction, Game* game);
 
+/*
+    Generate a random piece
+*/
 Piece spawn_piece(void);
 
+/// GAME
+
 Game Game_init(int level);
+
 void Game_reset(Game* game, int start_level);
+
+/*
+    True if the Square touch any other piece on the board
+*/
 bool Game_touch_other_square(const Game* game, Square square);
+
 bool Game_active_piece_can_go_right(Game* game);
+
 bool Game_active_piece_can_go_left(Game* game);
+
+/*
+    Return true if Touched else false
+*/
 bool Game_gravity_active_piece(Game* game);
+
+/*
+    Set the current fallen piece and set as the active piece the next piece of the Game
+*/
 void Game_release_active_piece(Game* game);
+
+/*
+    Move a piece Left or Right
+*/
 void Game_move_active_piece(Game* game, Direction direction);
+
+/*
+    Utility function that wrap Piece_rotate for rotating only the active piece
+*/
 void Game_rotate_active_piece(Game* game, Direction direction);
+
 void Game_update_score(Game* game, int lines);
 int Game_delete_full_rows_if_exists(Game* game);
 bool Game_check_game_over(Game* game);
 void Game_draw_on_window(const Game* game, int starting_x, Shader shader, float delta_time);
-
-void play_screen_render(
-    Game* game,
-    Shader* square_shader,
-    bool* game_over,
-    float* delta_time,
-    int screen_width,
-    int screen_height);
 
 void play_screen_input(
     Game* game,
@@ -165,6 +199,14 @@ void play_screen_input(
     bool* game_over,
     bool* level_selection_screen,
     int start_level);
+
+void play_screen_render(
+    Game* game,
+    Shader* square_shader,
+    bool* game_over,
+    float* delta_time,
+    int screen_width,
+    int screen_height);
 
 void play_screen_logic(
     Game* game,
@@ -202,7 +244,7 @@ int main(void)
     // START Play Screen variables
     bool game_over = false;
     bool music_paused = false;
-    float move_delay = 0.2f;
+    float move_delay = 0.15f;
     float move_timer = 0.0f;
     float level_delay = LEVEL_TIME(start_level);
     float level_timer = 0.0f;
@@ -320,6 +362,7 @@ void play_screen_input(
     bool* level_selection_screen,
     int start_level)
 {
+    // Hold down a key for continuous moving
     if (IsKeyDown(KEY_RIGHT) && *move_timer >= *move_delay) {
         Game_move_active_piece(game, Right);
         *move_timer = 0.0f;
@@ -328,6 +371,7 @@ void play_screen_input(
         Game_move_active_piece(game, Left);
         *move_timer = 0.0f;
     }
+
     if (IsKeyPressed(KEY_Z)) {
         Game_rotate_active_piece(game, Left);
     }
@@ -347,9 +391,13 @@ void play_screen_input(
             *music_paused = !(*music_paused);
         }
     }
+
+    // Soft drop a piece, 1/2 FPS, so is like playing on level 19
     if (IsKeyDown(KEY_DOWN)) {
         *is_soft_drop = true;
-        *level_timer += (*level_delay) / 2;
+        if (game->current_level < 19) {
+            *level_timer += (*level_delay) / 2;
+        }
     }
     if (IsKeyReleased(KEY_DOWN)) {
         *is_soft_drop = false;
@@ -455,6 +503,9 @@ void play_screen_logic(
     bool* music_paused,
     bool* game_over)
 {
+    // Every level_decay time the game gravity by 1 slot and check if active_piece touch other squares.
+    // If yes release it, delete full row if exists, sounds, update score, check if next level
+    // and check game over
     if (*level_timer >= *level_delay) {
         *level_timer = 0.0f;
         if (Game_gravity_active_piece(game) == true) {
@@ -698,9 +749,6 @@ bool Game_active_piece_can_go_left(Game* game)
     return true;
 }
 
-/*
-    Return true if Touched else false
-*/
 bool Game_gravity_active_piece(Game* game)
 {
     for (int i = 0; i < ARRAY_LEN_INT(game->active_piece.squares); ++i) {
