@@ -108,7 +108,7 @@ int Game_delete_full_rows_if_exists(Game* game);
 bool Game_check_game_over(Game* game);
 void Game_draw_on_window(const Game* game, int starting_x, Shader shader, float delta_time);
 
-void render_play_screen(
+void play_screen_render(
     Game* game,
     Sound* line_clear_sound,
     Sound* tetris_sound,
@@ -121,6 +121,28 @@ void render_play_screen(
     int screen_width,
     int screen_height,
     int start_level);
+
+void play_screen_input(
+    Game* game,
+    Sound* theme,
+    float* move_timer,
+    float* move_delay,
+    float* level_timer,
+    float* level_delay,
+    bool* music_paused,
+    bool* is_soft_drop,
+    bool* game_over,
+    int start_level);
+
+void play_screen_logic(
+    Sound* theme,
+    float* delta_time,
+    float* level_timer,
+    float* move_timer,
+    bool* is_soft_drop,
+    bool* music_paused);
+
+void render_level_selection_screen(void);
 
 int main(void)
 {
@@ -147,7 +169,6 @@ int main(void)
     Sound tetris_sound = LoadSound("resources/music/tetris.mp3");
     Sound next_level_sound = LoadSound("resources/music/next_level.mp3");
     Sound theme = LoadSound("resources/music/b-type_theme.mp3");
-    PlaySound(theme);
 
 #ifdef PLATFORM_WEB
     Shader square_shader = LoadShader("resources/shaders/liquid_square_vertex.glsl", "resources/shaders/liquid_square_web.glsl");
@@ -159,52 +180,14 @@ int main(void)
     float delta_time = 0.0f;
 
     while (!WindowShouldClose()) {
-        // Audio
-        if (!IsSoundPlaying(theme) && !music_paused)
-            PlaySound(theme);
-
-        // Input
-        if (IsKeyDown(KEY_RIGHT) && move_timer >= move_delay) {
-            Game_move_active_piece(&game, Right);
-            move_timer = 0.0f;
-        }
-        if (IsKeyDown(KEY_LEFT) && move_timer >= move_delay) {
-            Game_move_active_piece(&game, Left);
-            move_timer = 0.0f;
-        }
-        if (IsKeyPressed(KEY_Z))
-            Game_rotate_active_piece(&game, Left);
-        if (IsKeyPressed(KEY_X))
-            Game_rotate_active_piece(&game, Right);
-        if (IsKeyPressed(KEY_M)) {
-            if (IsSoundPlaying(theme)) {
-                PauseSound(theme);
-                music_paused = !music_paused;
-            } else {
-                ResumeSound(theme);
-                music_paused = !music_paused;
-            }
-        }
-        if (IsKeyDown(KEY_DOWN)) {
-            is_soft_drop = true;
-            level_timer += level_delay / 2;
-        }
-        if (IsKeyReleased(KEY_DOWN)) {
-            is_soft_drop = false;
-        }
-        if (IsKeyPressed(KEY_R)) {
-            Game_reset(&game, start_level);
-            game_over = false;
-        }
+        // INPUT
+        play_screen_input(&game, &theme, &move_timer, &move_delay, &level_timer, &level_delay, &music_paused, &is_soft_drop, &game_over, start_level);
 
         // RENDER
-        render_play_screen(&game, &line_clear_sound, &tetris_sound, &next_level_sound, &square_shader, &game_over, &delta_time, &level_timer, &level_delay, screen_width, screen_height, start_level);
+        play_screen_render(&game, &line_clear_sound, &tetris_sound, &next_level_sound, &square_shader, &game_over, &delta_time, &level_timer, &level_delay, screen_width, screen_height, start_level);
 
-        move_timer += GetFrameTime();
-        if (!is_soft_drop) {
-            level_timer += GetFrameTime();
-        }
-        delta_time += GetFrameTime();
+        // LOGIC
+        play_screen_logic(&theme, &delta_time, &level_timer, &move_timer, &is_soft_drop, &music_paused);
     }
 
     // Frees
@@ -225,7 +208,57 @@ int main(void)
 //              //
 //              //
 
-void render_play_screen(
+void render_level_selection_screen(void)
+{
+}
+
+void play_screen_input(
+    Game* game,
+    Sound* theme,
+    float* move_timer,
+    float* move_delay,
+    float* level_timer,
+    float* level_delay,
+    bool* music_paused,
+    bool* is_soft_drop,
+    bool* game_over,
+    int start_level)
+{
+    if (IsKeyDown(KEY_RIGHT) && *move_timer >= *move_delay) {
+        Game_move_active_piece(game, Right);
+        *move_timer = 0.0f;
+    }
+    if (IsKeyDown(KEY_LEFT) && *move_timer >= *move_delay) {
+        Game_move_active_piece(game, Left);
+        *move_timer = 0.0f;
+    }
+    if (IsKeyPressed(KEY_Z))
+        Game_rotate_active_piece(game, Left);
+    if (IsKeyPressed(KEY_X))
+        Game_rotate_active_piece(game, Right);
+    if (IsKeyPressed(KEY_M)) {
+        if (IsSoundPlaying(*theme)) {
+            PauseSound(*theme);
+            *music_paused = !(*music_paused);
+        } else {
+            ResumeSound(*theme);
+            *music_paused = !(*music_paused);
+        }
+    }
+    if (IsKeyDown(KEY_DOWN)) {
+        *is_soft_drop = true;
+        *level_timer += (*level_delay) / 2;
+    }
+    if (IsKeyReleased(KEY_DOWN)) {
+        *is_soft_drop = false;
+    }
+    if (IsKeyPressed(KEY_R)) {
+        Game_reset(game, start_level);
+        *game_over = false;
+    }
+}
+
+void play_screen_render(
     Game* game,
     Sound* line_clear_sound,
     Sound* tetris_sound,
@@ -335,6 +368,25 @@ void render_play_screen(
         EndDrawing();
         return;
     }
+}
+
+void play_screen_logic(
+    Sound* theme,
+    float* delta_time,
+    float* level_timer,
+    float* move_timer,
+    bool* is_soft_drop,
+    bool* music_paused)
+{
+    // Audio
+    if (!IsSoundPlaying(*theme) && !(*music_paused)) {
+        PlaySound(*theme);
+    }
+    *move_timer += GetFrameTime();
+    if (!(*is_soft_drop)) {
+        *level_timer += GetFrameTime();
+    }
+    *delta_time += GetFrameTime();
 }
 
 int Piece_left_square(Piece* piece)
