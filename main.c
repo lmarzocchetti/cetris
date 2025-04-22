@@ -108,8 +108,6 @@ int Game_delete_full_rows_if_exists(Game* game);
 bool Game_check_game_over(Game* game);
 void Game_draw_on_window(const Game* game, int starting_x, Shader shader, float delta_time);
 
-void update_draw_frame(void);
-
 int main(void)
 {
     srand(time(NULL)); // SEED
@@ -299,10 +297,6 @@ int main(void)
     CloseWindow();
 
     return 0;
-}
-
-void update_draw_frame(void)
-{
 }
 
 //              //
