@@ -87,9 +87,10 @@ and substitute to the <style> generated automatically by emscripten.
 
 ### Further update
 
+- [ ] Separate next piece from score (maybe generate 4/5 pieces aot?)
+- [ ] Destroy animation
 - [x] Level selection
 - [x] Next level after some deleted blocks
-- [ ] Destroy animation
 - [x] OpenGL Shaders
 - [x] Web support (emscripten)
 
