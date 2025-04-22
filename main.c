@@ -160,14 +160,16 @@ int main(void)
     float delta_time = 0.0f;
 
     while (!WindowShouldClose()) {
-        move_timer += GetFrameTime();
-        if (!is_soft_drop) {
-            level_timer += GetFrameTime();
-        }
+        // move_timer += GetFrameTime();
+        // if (!is_soft_drop) {
+        //     level_timer += GetFrameTime();
+        // }
 
         // Audio
         if (!IsSoundPlaying(theme) && !music_paused)
             PlaySound(theme);
+
+        // Input
         if (IsKeyDown(KEY_RIGHT) && move_timer >= move_delay) {
             Game_move_active_piece(&game, Right);
             move_timer = 0.0f;
@@ -201,8 +203,13 @@ int main(void)
             game_over = false;
         }
 
+        // RENDER
         render_play_screen(&game, &line_clear_sound, &tetris_sound, &next_level_sound, &square_shader, &game_over, &delta_time, &level_timer, &level_delay, screen_width, screen_height, start_level);
 
+        move_timer += GetFrameTime();
+        if (!is_soft_drop) {
+            level_timer += GetFrameTime();
+        }
         delta_time += GetFrameTime();
     }
 
