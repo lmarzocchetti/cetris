@@ -108,6 +108,20 @@ int Game_delete_full_rows_if_exists(Game* game);
 bool Game_check_game_over(Game* game);
 void Game_draw_on_window(const Game* game, int starting_x, Shader shader, float delta_time);
 
+void render_play_screen(
+    Game* game,
+    Sound* line_clear_sound,
+    Sound* tetris_sound,
+    Sound* next_level_sound,
+    Shader* square_shader,
+    bool* game_over,
+    float* delta_time,
+    float* level_timer,
+    float* level_delay,
+    int screen_width,
+    int screen_height,
+    int start_level);
+
 int main(void)
 {
     srand(time(NULL)); // SEED
@@ -187,103 +201,8 @@ int main(void)
             game_over = false;
         }
 
-        if (level_timer >= level_delay) {
-            level_timer = 0.0f;
-            if (Game_gravity_active_piece(&game) == true) {
-                Game_release_active_piece(&game);
-                int deleted_rows = Game_delete_full_rows_if_exists(&game);
-                // SOUND
-                switch (deleted_rows) {
-                case 1:
-                case 2:
-                case 3:
-                    PlaySound(line_clear_sound);
-                    break;
-                case 4:
-                    PlaySound(tetris_sound);
-                    break;
-                }
-                Game_update_score(&game, deleted_rows);
-                // Change level if need
-                if ((game.current_level == start_level && A_TYPE_P(start_level, game.destroyed_lines)) || (game.current_level > start_level && (game.destroyed_lines >= ((start_level * 10 + 10) + (game.current_level - start_level) * 10)))) {
-                    game.current_level += 1;
-                    level_delay = LEVEL_TIME(game.current_level);
-                    PlaySound(next_level_sound);
-                }
-                game_over = Game_check_game_over(&game);
-            }
-        }
+        render_play_screen(&game, &line_clear_sound, &tetris_sound, &next_level_sound, &square_shader, &game_over, &delta_time, &level_timer, &level_delay, screen_width, screen_height, start_level);
 
-        BeginDrawing();
-        if (game_over == false) {
-            ClearBackground((Color) { 0x1E, 0x20, 0x1E, 0xFF });
-
-            Game_draw_on_window(&game, GUI_SIZE, square_shader, delta_time);
-
-            // GUI DRAWING
-            {
-                DrawRectangleLinesEx((Rectangle) { 0, 0, GUI_SIZE, screen_height }, 15, (Color) { 0x3C, 0x3D, 0x37, 0xFF });
-
-                // Score Text and value
-                DrawText("Score:", 25, 50, 25, LIGHTGRAY);
-                char score_as_str[50] = { 0 };
-                sprintf(score_as_str, "%d", game.score);
-                DrawText(score_as_str, 110, 51, 25, SKYBLUE);
-
-                // Best Score text and value
-                DrawText("Best Score:", 25, 100, 25, LIGHTGRAY);
-                char best_as_str[50] = { 0 };
-                sprintf(best_as_str, "%d", game.best_score);
-                DrawText(best_as_str, 175, 101, 25, SKYBLUE);
-
-                // Deleted Lines text and value
-                DrawText("Del. Lines:", 25, 150, 25, LIGHTGRAY);
-                char del_lines_as_str[50] = { 0 };
-                sprintf(del_lines_as_str, "%d", game.destroyed_lines);
-                DrawText(del_lines_as_str, 150, 151, 25, SKYBLUE);
-
-                // Level
-                DrawText("Level:", 25, 200, 25, LIGHTGRAY);
-                char level_as_str[50] = { 0 };
-                sprintf(level_as_str, "%d", game.current_level);
-                DrawText(level_as_str, 100, 201, 25, SKYBLUE);
-
-                // Next Piece text and new piece
-                DrawText("Next Piece", GUI_SIZE / 2 - 75, 420, 25, LIGHTGRAY);
-                Color next_piece_color = ColorFromPiece(game.next_piece.kind);
-
-                for (int i = 0; i < ARRAY_LEN(game.next_piece.squares); ++i) {
-                    float new_x = 0.0f;
-                    if (game.next_piece.kind == I) {
-                        new_x = (float)(game.next_piece.squares[i][1] * SQUARE_SIZE - 85);
-                    } else if (game.next_piece.kind == O) {
-                        new_x = (float)(game.next_piece.squares[i][1] * SQUARE_SIZE - 50);
-                    } else {
-                        new_x = (float)(game.next_piece.squares[i][1] * SQUARE_SIZE - 70);
-                    }
-
-                    Rectangle rect = {
-                        .x = new_x,
-                        .y = (float)(game.next_piece.squares[i][0] * SQUARE_SIZE + 510),
-                        .width = (float)SQUARE_SIZE,
-                        .height = (float)SQUARE_SIZE
-                    };
-
-                    BeginShaderMode(square_shader);
-                    DrawRectangleRec(rect, next_piece_color);
-                    DrawRectangleLinesEx(rect, LINE_THICKNESS, BLACK);
-                    EndShaderMode();
-                }
-            }
-        } else {
-            BeginDrawing();
-            DrawText("Si pers fra :(", screen_width / 4, screen_height / 3, 30, DARKBLUE);
-            DrawText("Schiaccj lu tast R per continua'", screen_width / 4, screen_height / 3 + 40, 25, LIME);
-            EndDrawing();
-            continue;
-        }
-
-        EndDrawing();
         delta_time += GetFrameTime();
     }
 
@@ -304,6 +223,122 @@ int main(void)
 //  FUNCTIONS   //
 //              //
 //              //
+
+void render_play_screen(
+    Game* game,
+    Sound* line_clear_sound,
+    Sound* tetris_sound,
+    Sound* next_level_sound,
+    Shader* square_shader,
+    bool* game_over,
+    float* delta_time,
+    float* level_timer,
+    float* level_delay,
+    int screen_width,
+    int screen_height,
+    int start_level)
+{
+    if (*level_timer >= *level_delay) {
+        *level_timer = 0.0f;
+        if (Game_gravity_active_piece(game) == true) {
+            Game_release_active_piece(game);
+            int deleted_rows = Game_delete_full_rows_if_exists(game);
+            // SOUND
+            switch (deleted_rows) {
+            case 1:
+            case 2:
+            case 3:
+                PlaySound(*line_clear_sound);
+                break;
+            case 4:
+                PlaySound(*tetris_sound);
+                break;
+            }
+            Game_update_score(game, deleted_rows);
+            // Change level if need
+            if ((game->current_level == start_level && A_TYPE_P(start_level, game->destroyed_lines)) || (game->current_level > start_level && (game->destroyed_lines >= ((start_level * 10 + 10) + (game->current_level - start_level) * 10)))) {
+                game->current_level += 1;
+                *level_delay = LEVEL_TIME(game->current_level);
+                PlaySound(*next_level_sound);
+            }
+            *game_over = Game_check_game_over(game);
+        }
+    }
+
+    // BeginDrawing();
+    if (*game_over == false) {
+        BeginDrawing();
+        ClearBackground((Color) { 0x1E, 0x20, 0x1E, 0xFF });
+
+        Game_draw_on_window(game, GUI_SIZE, *square_shader, *delta_time);
+
+        // GUI DRAWING
+        {
+            DrawRectangleLinesEx((Rectangle) { 0, 0, GUI_SIZE, screen_height }, 15, (Color) { 0x3C, 0x3D, 0x37, 0xFF });
+
+            // Score Text and value
+            DrawText("Score:", 25, 50, 25, LIGHTGRAY);
+            char score_as_str[50] = { 0 };
+            sprintf(score_as_str, "%d", game->score);
+            DrawText(score_as_str, 110, 51, 25, SKYBLUE);
+
+            // Best Score text and value
+            DrawText("Best Score:", 25, 100, 25, LIGHTGRAY);
+            char best_as_str[50] = { 0 };
+            sprintf(best_as_str, "%d", game->best_score);
+            DrawText(best_as_str, 175, 101, 25, SKYBLUE);
+
+            // Deleted Lines text and value
+            DrawText("Del. Lines:", 25, 150, 25, LIGHTGRAY);
+            char del_lines_as_str[50] = { 0 };
+            sprintf(del_lines_as_str, "%d", game->destroyed_lines);
+            DrawText(del_lines_as_str, 150, 151, 25, SKYBLUE);
+
+            // Level
+            DrawText("Level:", 25, 200, 25, LIGHTGRAY);
+            char level_as_str[50] = { 0 };
+            sprintf(level_as_str, "%d", game->current_level);
+            DrawText(level_as_str, 100, 201, 25, SKYBLUE);
+
+            // Next Piece text and new piece
+            DrawText("Next Piece", GUI_SIZE / 2 - 75, 420, 25, LIGHTGRAY);
+            Color next_piece_color = ColorFromPiece(game->next_piece.kind);
+
+            for (int i = 0; i < ARRAY_LEN(game->next_piece.squares); ++i) {
+                float new_x = 0.0f;
+                if (game->next_piece.kind == I) {
+                    new_x = (float)(game->next_piece.squares[i][1] * SQUARE_SIZE - 85);
+                } else if (game->next_piece.kind == O) {
+                    new_x = (float)(game->next_piece.squares[i][1] * SQUARE_SIZE - 50);
+                } else {
+                    new_x = (float)(game->next_piece.squares[i][1] * SQUARE_SIZE - 70);
+                }
+
+                Rectangle rect = {
+                    .x = new_x,
+                    .y = (float)(game->next_piece.squares[i][0] * SQUARE_SIZE + 510),
+                    .width = (float)SQUARE_SIZE,
+                    .height = (float)SQUARE_SIZE
+                };
+
+                BeginShaderMode(*square_shader);
+                DrawRectangleRec(rect, next_piece_color);
+                DrawRectangleLinesEx(rect, LINE_THICKNESS, BLACK);
+                EndShaderMode();
+            }
+        }
+        EndDrawing();
+    } else {
+        BeginDrawing();
+        DrawText("Si pers fra :(", screen_width / 4, screen_height / 3, 30, DARKBLUE);
+        DrawText("Schiaccj lu tast R per continua'", screen_width / 4, screen_height / 3 + 40, 25, LIME);
+        EndDrawing();
+        return;
+    }
+
+    // EndDrawing();
+}
+
 int Piece_left_square(Piece* piece)
 {
     int min_col = 100;
