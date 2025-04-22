@@ -129,7 +129,6 @@ int main(void)
     constexpr int screen_width = COLS * SQUARE_SIZE + GUI_SIZE;
     constexpr int screen_height = ROWS * SQUARE_SIZE;
     int start_level = 0;
-    // int current_level = start_level;
 
     bool game_over = false;
     bool music_paused = false;
@@ -160,11 +159,6 @@ int main(void)
     float delta_time = 0.0f;
 
     while (!WindowShouldClose()) {
-        // move_timer += GetFrameTime();
-        // if (!is_soft_drop) {
-        //     level_timer += GetFrameTime();
-        // }
-
         // Audio
         if (!IsSoundPlaying(theme) && !music_paused)
             PlaySound(theme);
@@ -272,7 +266,6 @@ void render_play_screen(
         }
     }
 
-    // BeginDrawing();
     if (*game_over == false) {
         BeginDrawing();
         ClearBackground((Color) { 0x1E, 0x20, 0x1E, 0xFF });
@@ -342,8 +335,6 @@ void render_play_screen(
         EndDrawing();
         return;
     }
-
-    // EndDrawing();
 }
 
 int Piece_left_square(Piece* piece)
