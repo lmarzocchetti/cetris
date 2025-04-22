@@ -85,6 +85,7 @@ typedef struct {
     int destroyed_lines;
     int score;
     int best_score;
+    int current_level;
 } Game;
 
 int Piece_left_square(Piece* piece);
@@ -93,8 +94,8 @@ void Piece_rotate(Piece* piece, float direction, Game* game);
 
 Piece spawn_piece(void);
 
-Game Game_init(void);
-void Game_reset(Game* game);
+Game Game_init(int level);
+void Game_reset(Game* game, int start_level);
 bool Game_touch_other_square(const Game* game, Square square);
 bool Game_active_piece_can_go_right(Game* game);
 bool Game_active_piece_can_go_left(Game* game);
@@ -102,7 +103,7 @@ bool Game_gravity_active_piece(Game* game);
 void Game_release_active_piece(Game* game);
 void Game_move_active_piece(Game* game, Direction direction);
 void Game_rotate_active_piece(Game* game, Direction direction);
-void Game_update_score(Game* game, int lines, int level);
+void Game_update_score(Game* game, int lines);
 int Game_delete_full_rows_if_exists(Game* game);
 bool Game_check_game_over(Game* game);
 void Game_draw_on_window(const Game* game, int starting_x, Shader shader, float delta_time);
@@ -116,7 +117,7 @@ int main(void)
     constexpr int screen_width = COLS * SQUARE_SIZE + GUI_SIZE;
     constexpr int screen_height = ROWS * SQUARE_SIZE;
     int start_level = 0;
-    int current_level = start_level;
+    // int current_level = start_level;
 
     bool game_over = false;
     bool music_paused = false;
@@ -133,7 +134,8 @@ int main(void)
 
     Sound line_clear_sound = LoadSound("resources/music/line_clear.mp3");
     Sound tetris_sound = LoadSound("resources/music/tetris.mp3");
-    Sound theme = LoadSound("resources/music/theme_a_drill.ogg");
+    Sound next_level_sound = LoadSound("resources/music/next_level.mp3");
+    Sound theme = LoadSound("resources/music/b-type_theme.mp3");
     PlaySound(theme);
 
 #ifdef PLATFORM_WEB
@@ -142,7 +144,7 @@ int main(void)
     Shader square_shader = LoadShader(nullptr, "resources/shaders/liquid_square.glsl");
 #endif
 
-    Game game = Game_init();
+    Game game = Game_init(start_level);
     float delta_time = 0.0f;
 
     while (!WindowShouldClose()) {
@@ -183,7 +185,7 @@ int main(void)
             is_soft_drop = false;
         }
         if (IsKeyPressed(KEY_R)) {
-            Game_reset(&game);
+            Game_reset(&game, start_level);
             game_over = false;
         }
 
@@ -203,11 +205,12 @@ int main(void)
                     PlaySound(tetris_sound);
                     break;
                 }
-                Game_update_score(&game, deleted_rows, current_level);
+                Game_update_score(&game, deleted_rows);
                 // Change level if need
-                if ((current_level == start_level && A_TYPE_P(start_level, game.destroyed_lines)) || (current_level > start_level && (game.destroyed_lines >= ((start_level * 10 + 10) + (current_level - start_level) * 10)))) {
-                    current_level += 1;
-                    level_delay = LEVEL_TIME(current_level);
+                if ((game.current_level == start_level && A_TYPE_P(start_level, game.destroyed_lines)) || (game.current_level > start_level && (game.destroyed_lines >= ((start_level * 10 + 10) + (game.current_level - start_level) * 10)))) {
+                    game.current_level += 1;
+                    level_delay = LEVEL_TIME(game.current_level);
+                    PlaySound(next_level_sound);
                 }
                 game_over = Game_check_game_over(&game);
             }
@@ -244,7 +247,7 @@ int main(void)
                 // Level
                 DrawText("Level:", 25, 200, 25, LIGHTGRAY);
                 char level_as_str[50] = { 0 };
-                sprintf(level_as_str, "%d", current_level);
+                sprintf(level_as_str, "%d", game.current_level);
                 DrawText(level_as_str, 100, 201, 25, SKYBLUE);
 
                 // Next Piece text and new piece
@@ -289,6 +292,7 @@ int main(void)
     // Frees
     UnloadShader(square_shader);
     UnloadSound(theme);
+    UnloadSound(next_level_sound);
     UnloadSound(tetris_sound);
     UnloadSound(line_clear_sound);
     CloseAudioDevice();
@@ -434,7 +438,7 @@ Piece spawn_piece(void)
     return piece_to_spawn;
 }
 
-Game Game_init(void)
+Game Game_init(int level)
 {
     Board board = { 0 };
     for (int row = 0; row < ARRAY_LEN(board); ++row) {
@@ -449,16 +453,17 @@ Game Game_init(void)
         .next_piece = spawn_piece(),
         .destroyed_lines = 0,
         .score = 0,
-        .best_score = 0
+        .best_score = 0,
+        .current_level = level
     };
     memcpy(game.board, board, sizeof(board));
 
     return game;
 }
 
-void Game_reset(Game* game)
+void Game_reset(Game* game, int start_level)
 {
-    Game to_copy = Game_init();
+    Game to_copy = Game_init(start_level);
     to_copy.best_score = game->best_score;
     to_copy.score = game->score;
     memcpy(game, &to_copy, sizeof(to_copy));
@@ -466,6 +471,7 @@ void Game_reset(Game* game)
     if (game->score > game->best_score) {
         game->best_score = game->score;
     }
+    game->score = 0;
 }
 
 bool Game_touch_other_square(const Game* game, Square square)
@@ -578,21 +584,21 @@ void Game_rotate_active_piece(Game* game, Direction direction)
     }
 }
 
-void Game_update_score(Game* game, int lines, int level)
+void Game_update_score(Game* game, int lines)
 {
     int score = 0;
     switch (lines) {
     case 1:
-        score = 40 * (level + 1);
+        score = 40 * (game->current_level + 1);
         break;
     case 2:
-        score = 100 * (level + 1);
+        score = 100 * (game->current_level + 1);
         break;
     case 3:
-        score = 300 * (level + 1);
+        score = 300 * (game->current_level + 1);
         break;
     case 4:
-        score = 1200 * (level + 1);
+        score = 1200 * (game->current_level + 1);
         break;
     }
 

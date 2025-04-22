@@ -51,6 +51,30 @@ $ ./cetris
 
 To play the music you need to click on the canvas!
 
+#### Centering the Canvas
+
+By default emscripten generate an html file which is not centered, if you interested copy this:
+
+```
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  canvas.emscripten {
+    border: 0 none;
+    background-color: #000;
+  }
+</style>
+```
+
+and substitute to the <style> generated automatically by emscripten.
+
 ### Keybindings
 
 - z -> Rotate the piece Clockwise
