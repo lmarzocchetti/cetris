@@ -417,7 +417,7 @@ void play_screen_render(
                 }
 
                 Rectangle rect = {
-                    .x = new_x,
+                    .x = new_x - 14.0,
                     .y = (float)(game->next_piece.squares[i][0] * SQUARE_SIZE + 510),
                     .width = (float)SQUARE_SIZE,
                     .height = (float)SQUARE_SIZE
@@ -516,64 +516,64 @@ Piece spawn_piece(void)
     switch (piece_kind_to_spawn) {
     case T:
         memcpy(piece_to_spawn.squares, (Square[4]) {
+                                           { 2, 5 },
                                            { 1, 5 },
-                                           { 0, 5 },
-                                           { 0, 4 },
-                                           { 0, 6 },
+                                           { 1, 4 },
+                                           { 1, 6 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
     case I:
         memcpy(piece_to_spawn.squares, (Square[4]) {
-                                           { 1, 4 },
-                                           { 1, 5 },
-                                           { 1, 6 },
-                                           { 1, 7 },
+                                           { 2, 4 },
+                                           { 2, 5 },
+                                           { 2, 6 },
+                                           { 2, 7 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
     case J:
         memcpy(piece_to_spawn.squares, (Square[4]) {
-                                           { 1, 4 },
-                                           { 1, 5 },
+                                           { 2, 4 },
+                                           { 2, 5 },
+                                           { 2, 6 },
                                            { 1, 6 },
-                                           { 0, 6 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
     case Z:
         memcpy(piece_to_spawn.squares, (Square[4]) {
-                                           { 0, 6 },
-                                           { 0, 5 },
-                                           { 1, 4 },
+                                           { 1, 6 },
                                            { 1, 5 },
+                                           { 2, 4 },
+                                           { 2, 5 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
     case O:
         memcpy(piece_to_spawn.squares, (Square[4]) {
+                                           { 2, 4 },
+                                           { 2, 5 },
                                            { 1, 4 },
                                            { 1, 5 },
-                                           { 0, 4 },
-                                           { 0, 5 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
     case S:
         memcpy(piece_to_spawn.squares, (Square[4]) {
-                                           { 1, 6 },
+                                           { 2, 6 },
+                                           { 2, 5 },
                                            { 1, 5 },
-                                           { 0, 5 },
-                                           { 0, 4 },
+                                           { 1, 4 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
     case L:
         memcpy(piece_to_spawn.squares, (Square[4]) {
+                                           { 2, 4 },
+                                           { 2, 5 },
+                                           { 2, 6 },
                                            { 1, 4 },
-                                           { 1, 5 },
-                                           { 1, 6 },
-                                           { 0, 4 },
                                        },
             sizeof(piece_to_spawn.squares));
         break;
@@ -788,8 +788,8 @@ int Game_delete_full_rows_if_exists(Game* game)
 
 bool Game_check_game_over(Game* game)
 {
-    for (int i = 0; i < ARRAY_LEN(game->board[0]); ++i) {
-        if (game->board[0][i].active == true) {
+    for (int i = 0; i < ARRAY_LEN(game->board[1]); ++i) {
+        if (game->board[1][i].active == true) {
             return true;
         }
     }
